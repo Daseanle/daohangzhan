@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的完全个性化导航站</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        /* --- 全局与重置 --- */
+        :root {
+            --primary-color: #007bff; --bg-color: #f4f6f9; --card-bg-color: #ffffff;
+            --text-color: #333; --text-secondary-color: #6c757d; --border-color: #e9ecef;
+            --shadow-color: rgba(0, 0, 0, 0.05); --danger-color: #dc3545; --success-color: #28a745;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
+        a { text-decoration: none; color: var(--primary-color); transition: color 0.2s ease; }
+        a:hover { color: #0056b3; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+        
+        /* --- 布局 --- */
+        .container { display: flex; max-width: 1600px; margin: 0 auto; }
+        .sidebar { width: 220px; height: 100vh; position: sticky; top: 0; background-color: var(--card-bg-color); border-right: 1px solid var(--border-color); padding: 20px 0; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; }
+        .sidebar-title { font-size: 1.5em; font-weight: 600; padding: 0 20px 10px; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; }
+        .sidebar nav { flex-grow: 1; }
+        .sidebar nav ul { list-style: none; }
+        .sidebar nav a { display: block; padding: 10px 20px; color: var(--text-secondary-color); font-weight: 500; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar nav a:hover { color: var(--primary-color); background-color: var(--bg-color); }
+        .sidebar-actions { padding: 10px 20px; border-top: 1px solid var(--border-color); }
+        .sidebar-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px; font-size: 1em; color: var(--text-secondary-color); border-radius: 6px; transition: all 0.2s; margin-top: 5px; }
+        .sidebar-btn:hover { background-color: var(--bg-color); color: var(--primary-color); }
+        .sidebar-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+        
+        /* --- 主内容区 --- */
+        .main-content { flex-grow: 1; padding: 30px; }
+        .content-section { margin-bottom: 50px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid transparent; }
+        .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); }
+        .section-header h2 { font-size: 2em; color: var(--text-color); flex-grow: 1; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+        
+        /* --- 卡片样式 --- */
+        .card { background-color: var(--card-bg-color); border-radius: 8px; border: 1px solid var(--border-color); padding: 20px; box-shadow: 0 2px 8px var(--shadow-color); display: flex; flex-direction: column; }
+        .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .card-header h3 { font-size: 1.25em; color: var(--text-color); flex-grow: 1; }
+        .card ul { list-style: none; }
+        .link-list-default { display: flex; flex-wrap: wrap; gap: 10px; }
+        .link-list-columns { column-count: 2; column-gap: 20px; }
+        .card li { break-inside: avoid-column; page-break-inside: avoid; position: relative; margin-bottom: 10px; }
+        .card li a { display: block; background-color: var(--bg-color); padding: 6px 12px; border-radius: 15px; font-size: 0.9em; color: var(--text-secondary-color); transition: background-color 0.2s ease, color 0.2s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card li a:hover { background-color: var(--primary-color); color: #fff; }
+
+        /* --- 编辑控件 --- */
+        .controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0;}
+        .control-btn { font-size: 16px; color: var(--text-secondary-color); transition: color 0.2s; line-height: 1; padding: 4px; border-radius: 4px; }
+        .control-btn:hover { background-color: var(--bg-color); }
+        .custom-link-actions { display: none; position: absolute; top: 50%; right: 5px; transform: translateY(-50%); gap: 4px; background: rgba(255,255,255,0.8); padding: 2px 5px; border-radius: 10px;}
+        .card li:hover .custom-link-actions { display: flex; }
+        .link-action-btn { width: 20px; height: 20px; border-radius: 50%; background-color: rgba(0,0,0,0.6); color: white; font-size: 12px; display: flex; align-items: center; justify-content: center; line-height: 1; border: 1px solid white; }
+        .add-item-btn { margin-top: auto; padding-top: 15px; }
+        .add-item-btn button { width: 100%; padding: 8px; border: 1px dashed var(--border-color); border-radius: 6px; color: var(--text-secondary-color); transition: all 0.2s; }
+        .add-item-btn button:hover { border-color: var(--primary-color); background-color: var(--bg-color); color: var(--primary-color); }
+        #add-category-btn-container { text-align: center; margin-top: 40px; }
+        #add-category-btn { background-color: var(--success-color); color: white; padding: 10px 20px; border-radius: 5px; font-size: 1em; }
+        
+        /* --- 拖拽模式 --- */
+        .drag-handle { display: none; cursor: move; color: var(--text-secondary-color); font-size: 20px; }
+        body.drag-mode .drag-handle { display: block; }
+        body.drag-mode .content-section { border: 2px dashed var(--primary-color); }
+        body.drag-mode .controls { display: none; }
+        .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
+        .sortable-chosen { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        #drag-mode-btn.active { background-color: var(--primary-color); color: white; }
+        
+        /* --- 设置弹窗 --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg-color); padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .modal-header h3 { font-size: 1.5em; }
+        .close-btn { font-size: 1.8em; line-height: 1; color: var(--text-secondary-color); }
+        .setting-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);}
+        .setting-section:last-child { border-bottom: none; margin-bottom: 0; }
+        .setting-section h4 { margin-bottom: 10px; font-size: 1.1em; }
+        .modal-btn { display: inline-block; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; color: white; margin-right: 10px; }
+        #export-btn { background-color: var(--success-color); }
+        #import-config-label { background-color: var(--primary-color); }
+        #reset-btn { background-color: var(--danger-color); }
+        #import-bookmarks-label { background-color: var(--primary-color); }
+        #import-config-input, #import-bookmarks-input { display: none; }
+        .setting-note { font-size: 0.85em; color: var(--text-secondary-color); margin-top: 8px; }
+        
+        /* --- 响应式 --- */
+        @media (max-width: 992px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; flex-direction: row; align-items: center; border-right: none; border-bottom: 1px solid var(--border-color); padding: 0; }
+            .sidebar-title { display: none; }
+            .sidebar nav { flex-grow: 1; display: flex; overflow-x: auto; }
+            .sidebar nav ul { display: flex; }
+            .sidebar nav a { padding: 15px; border-left: none; border-bottom: 3px solid transparent; }
+            .sidebar-actions { padding: 0 5px; border-top: none; border-left: 1px solid var(--border-color); display:flex; }
+            .sidebar-btn { padding: 15px 10px; margin-top: 0; }
+            .main-content { padding: 20px; }
+            .card-grid { grid-template-columns: 1fr; }
+            .link-list-columns { column-count: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">导航站</div>
+            <nav id="sidebar-nav"></nav>
+            <div class="sidebar-actions">
+                <button id="drag-mode-btn" class="sidebar-btn" title="拖拽排序">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512" fill="currentColor"><path d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0C17.9 160 0 142.1 0 120L0 72C0 49.9 17.9 32 40 32zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/></svg>
+                </button>
+                <button id="settings-btn" class="sidebar-btn" title="设置">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9.9 15.9-19.4 15.9H181.8c-9.5 0-17.4-6.8-19.4-15.9l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L49.8 409.4c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C50.6 273.1 50 264.6 50 256s.6-17.1 1.7-25.4L7.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9.9-15.9 19.4-15.9h148.4c9.5 0 17.4 6.8 19.4 15.9l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content" id="main-content"></main>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>导航设置</h3><button class="close-btn" id="close-modal-btn">&times;</button></div>
+            <div id="modal-body">
+                <div class="setting-section">
+                    <h4>数据管理</h4>
+                    <p class="setting-note">导出配置可备份您的所有布局和链接。导入配置会覆盖当前所有内容。</p>
+                    <button id="export-btn" class="modal-btn">导出配置</button>
+                    <label for="import-config-input" id="import-config-label" class="modal-btn">导入配置...</label>
+                    <input type="file" id="import-config-input" accept=".json">
+                    <button id="reset-btn" class="modal-btn">恢复默认</button>
+                </div>
+                <div class="setting-section">
+                    <h4>书签工具</h4>
+                    <p class="setting-note">从浏览器导出的HTML书签，将智能解析文件夹为卡片，并自动去重后添加到第一个分类中。</p>
+                    <label for="import-bookmarks-input" id="import-bookmarks-label" class="modal-btn">导入HTML书签...</label>
+                    <input type="file" id="import-bookmarks-input" accept=".html,.htm">
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- 1. 数据与设置管理 ---
+    const defaultCategories = [
+        { id: 'general-news', title: '综合资讯', cards: [ { id: 'gn-1', title: '主流热点', links: [ { name: '微博-热搜', url: 'https://s.weibo.com/top/summary' }, { name: '百度-热搜', url: 'https://top.baidu.com/board?tab=realtime' }, { name: '今日头条-热榜', url: 'https://www.toutiao.com/trending/' }, { name: '抖音-热点榜', url: 'https://www.douyin.com/hot' }, { name: '快手-热榜', url: 'https://www.kuaishou.com/brilliant' }, ]}, { id: 'gn-2', title: '深度阅读', links: [ { name: '知乎-热榜', url: 'https://www.zhihu.com/hot' }, { name: '微信-热门', url: 'https://weixin.sogou.com/' }, { name: '澎湃新闻-热榜', url: 'https://www.thepaper.cn/hot-news' }, { name: '36氪-热榜', url: 'https://36kr.com/hot-list/zonghe' }, { name: '少数派-热榜', url: 'https://sspai.com/hot' }, { name: 'Readhub-热门话题', url: 'https://readhub.cn/' }, ]}, { id: 'gn-3', title: '百科知识', links: [ { name: '历史上的今天', url: 'https://www.todayonhistory.com/' }, { name: '百度-百科', url: 'https://baike.baidu.com/' }, { name: '维基百科-中文', url: 'https://zh.wikipedia.org/' }, { name: '知乎日报', url: 'https://daily.zhihu.com/' }, ]} ] },
+        { id: 'ai-era', title: 'AI 纪元', cards: [ { id: 'ai-1', title: 'AI 快讯', links: [ { name: '量子位-首页', url: 'https://www.qbitai.com/' }, { name: '机器之心-热榜', url: 'https://www.jiqizhixin.com/hot-list' }, { name: 'APlay-AI日报', url: 'https://www.aplay.ai/' }, { name: 'Hugging Face-趋势', url: 'https://huggingface.co/trending' }, ]}, { id: 'ai-2', title: 'AI 产品与应用', links: [ { name: 'Product Hunt - AI', url: 'https://www.producthunt.com/categories/artificial-intelligence' }, { name: 'There\'s An AI For That', url: 'https://theresanaiforthat.com/' }, { name: '未来百科 (Futurepedia)', url: 'https://www.futurepedia.io/' }, { name: 'Replicate - Explore', url: 'https://replicate.com/explore' }, ]}, { id: 'ai-3', title: '前沿论文', links: [ { name: 'arXiv - 人工智能 (CS.AI)', url: 'https://arxiv.org/list/cs.AI/new' }, { name: 'Papers with Code - 趋势', url: 'https://paperswithcode.com/trending' }, ]} ] },
+        { id: 'tech-frontier', title: '科技前沿', cards: [ { id: 'tf-1', title: '科技门户', links: [ { name: '虎嗅网-热榜', url: 'https://www.huxiu.com/hot.html' }, { name: 'IT之家-热榜', url: 'https://www.ithome.com/rank' }, { name: 'cnBeta-热门', url: 'https://hot.cnbeta.com/' }, { name: 'InfoQ-热点', url: 'https://www.infoq.cn/hot' }, { name: '开发者头条', url: 'https://toutiao.io/' }, ]}, { id: 'tf-2', title: '开发者社区', links: [ { name: 'GitHub-趋势', url: 'https://github.com/trending' }, { name: 'V2EX-最热', url: 'https://www.v2ex.com/?tab=hot' }, { name: '稀土掘金-热榜', url: 'https://juejin.cn/hot/articles' }, { name: 'CSDN-热榜', url: 'https://blog.csdn.net/hot-articles' }, { name: 'StackOverflow-热门', url: 'https://stackoverflow.com/questions' }, { name: 'HelloGitHub', url: 'https://hellogithub.com/' }, ]}, { id: 'tf-3', title: '硬核极客', links: [ { name: '吾爱破解-热帖', url: 'https://www.52pojie.cn/forum.php?mod=guide&view=hot' }, { name: 'Chiphell-热帖', url: 'https://www.chiphell.com/forum.php?mod=guide&view=hot' }, { name: 'FreeCodeCamp', url: 'https://www.freecodecamp.org/news/' }, ]} ] },
+        { id: 'career-growth', title: '职场成长', cards: [ { id: 'cg-1', title: '行业洞察', links: [ { name: '脉脉-热榜', url: 'https://maimai.cn/web/gossip/' }, { name: '领英 (LinkedIn) - 每日必读', url: 'https://www.linkedin.com/news/' }, { name: '第一财经', url: 'https://www.yicai.com/' }, { name: '华尔街见闻', url: 'https://wallstreetcn.com/' }, ]}, { id: 'cg-2', title: '求职招聘', links: [ { name: '牛客网-讨论区', url: 'https://www.nowcoder.com/discuss' }, { name: 'Boss直聘-资讯', url: 'https://www.zhipin.com/media/news/' }, { name: '拉勾-言职', url: 'https://www.lagou.com/active' }, ]}, { id: 'cg-3', title: '创业与副业', links: [ { name: 'Indie Hackers', url: 'https://www.indiehackers.com/' }, { name: '小报童-热门订阅', url: 'https://xiaobot.net/hot_products' }, { name: '即刻-创业/副业圈', url: 'https://web.okjike.com/discover' }, ]} ] },
+        { id: 'community-buzz', title: '社区热议', cards: [ { id: 'cb-1', title: '综合讨论', links: [ { name: '虎扑-步行街', url: 'https://bbs.hupu.com/all-gambia' }, { name: '贴吧-热议榜', url: 'https://tieba.baidu.com/hottopic/browse/topicList' }, { name: 'NGA-热帖', url: 'https://bbs.nga.cn/thread.php?fid=-7' }, { name: 'Reddit-热门', url: 'https://www.reddit.com/hot/' }, ]}, { id: 'cb-2', title: '兴趣小组', links: [ { name: '豆瓣-小组', url: 'https://www.douban.com/group/explore' }, { name: '小红书-热门', url: 'https://www.xiaohongshu.com/explore' }, { name: '即刻-圈子', url: 'https://web.okjike.com/discover' }, ]}, { id: 'cb-3', title: '怀旧社区', links: [ { name: '水木社区-热点', url: 'https://www.newsmth.net/nForum/#!hot' }, { name: '果壳热点', url: 'https://www.guokr.com/hot/' }, ]} ] },
+        { id: 'entertainment-lifestyle', title: '娱乐生活', cards: [ { id: 'el-1', title: '影音热榜', links: [ { name: '哔哩哔哩-热门', url: 'https://www.bilibili.com/v/popular/all' }, { name: '豆瓣-新片榜', url: 'https://movie.douban.com/chart' }, { name: '微博-超话社区', url: 'https://weibo.com/p/100808_-_chaohua_-_all' }, { name: '猫眼-电影榜', url: 'https://www.maoyan.com/board' }, { name: '腾讯视频-热榜', url: 'https://v.qq.com/biu/ranks/' }, { name: '爱奇艺-风云榜', url: 'https://www.iqiyi.com/rank/' }, ]}, { id: 'el-2', title: '游戏世界', links: [ { name: 'Steam-热销榜', url: 'https://store.steampowered.com/search/?filter=topsellers' }, { name: 'TapTap-热门榜', url: 'https://www.taptap.cn/top/played' }, { name: '游民星空-热点', url: 'https://www.gamersky.com/news/' }, { name: '机核-资讯', url: 'https://www.gcores.com/news' }, { name: 'IGN-热门', url: 'https://www.ign.com/' }, ]}, { id: 'el-3', title: '生活趣味', links: [ { name: '下厨房-流行菜谱', url: 'https://www.xiachufang.com/explore/' }, { name: '马蜂窝-热门游记', url: 'http://www.mafengwo.cn/travel-scenic-spot/mafengwo/10186.html' }, { name: '煎蛋-无聊图', url: 'https://jandan.net/pic' }, { name: '糗事百科', url: 'https://www.qiushibaike.com/hot/' }, ]} ] },
+        { id: 'design-creativity', title: '灵感创意', cards: [ { id: 'dc-1', title: '设计灵感', links: [ { name: '站酷 (ZCOOL) - 人气榜', url: 'https://www.zcool.com.cn/discover/0!0!0!0!0!!!!-1!1' }, { name: 'Behance - 精选', url: 'https://www.behance.net/galleries' }, { name: 'Dribbble - 流行', url: 'https://dribbble.com/shots' }, { name: 'UI中国-推荐', url: 'https://www.ui.cn/' }, ]}, { id: 'dc-2', title: '创意发现', links: [ { name: '花瓣-热门', url: 'https://huaban.com/discovery/' }, { name: 'LOFTER-插画榜', url: 'https://www.lofter.com/tag/插画' }, { name: 'Unsplash - 热门', url: 'https://unsplash.com/' }, { name: 'Pixiv - 日榜', url: 'https://www.pixiv.net/ranking.php' }, { name: '500px - 流行', url: 'https://500px.com/popular' }, ]} ] },
+        { id: 'shopping-deals', title: '消费指南', cards: [ { id: 'sd-1', title: '好价推荐', links: [ { name: '什么值得买-好价', url: 'https://www.smzdm.com/haojia/' }, { name: '北美省钱快报 (Dealmoon)', url: 'https://www.dealmoon.com/' }, { name: '雪球-热门', url: 'https://xueqiu.com/' }, ]}, { id: 'sd-2', title: '电商热卖', links: [ { name: '淘宝-热销', url: 'https://remai.taobao.com/' }, { name: '京东-热卖', url: 'https://www.jd.com/phb.html' }, { name: '拼多多-热榜', url: 'https://mobile.pinduoduo.com/ranking.html' }, { name: '亚马逊-图书畅销榜', url: 'https://www.amazon.cn/gp/bestsellers/books' }, ]}, { id: 'sd-3', title: '品质生活', links: [ { name: '小米有品-热销', url: 'https://www.xiaomiyoupin.com/hot' }, { name: '网易严选-热销', url: 'https://you.163.com/' }, { name: '闲鱼-热门', url: 'https://g.alicdn.com/idle-fish-web/homepage/' }, ]} ] },
+        { id: 'global-view', title: '全球视野', cards: [ { id: 'gv-1', title: '国际通讯社', links: [ { name: '路透社 (Reuters)', url: 'https://www.reuters.com/' }, { name: '美联社 (AP)', url: 'https://apnews.com/' }, { name: 'BBC News', url: 'https://www.bbc.com/news' }, { name: '纽约时报 (The New York Times)', url: 'https://www.nytimes.com/' }, ]}, { id: 'gv-2', title: '科技与商业', links: [ { name: 'Hacker News', url: 'https://news.ycombinator.com/' }, { name: 'TechCrunch', url: 'https://techcrunch.com/' }, { name: 'The Verge', url: 'https://www.theverge.com/' }, { name: '彭博社 (Bloomberg)', url: 'https://www.bloomberg.com/' }, { name: '经济学人 (The Economist)', url: 'https://www.economist.com/' }, ]} ] },
+        { id: 'academic-research', title: '学术探索', cards: [ { id: 'ar-1', title: '高校BBS', links: [ { name: '北京大学-未名BBS', url: 'https://bbs.pku.edu.cn/v2/home.php' }, { name: '清华大学-水木社区', url: 'https://www.newsmth.net/' }, { name: '复旦大学-日月光华', url: 'https://bbs.fudan.edu.cn/bbs/main' }, { name: '上海交大-饮水思源', url: 'https://bbs.sjtu.edu.cn/' }, ]}, { id: 'ar-2', title: '学术资源', links: [ { name: '谷歌学术 (Google Scholar)', url: 'https://scholar.google.com/' }, { name: '知网-热点文献', url: 'https://kns.cnki.net/kns/hotspot?type=0' }, ]} ] }
+    ];
+
+    let appData;
+    function loadData() {
+        let data = localStorage.getItem('navData');
+        if (data) { appData = JSON.parse(data); } 
+        else { appData = { categories: JSON.parse(JSON.stringify(defaultCategories)) }; }
+    }
+    function saveData() { localStorage.setItem('navData', JSON.stringify(appData)); }
+    
+    const mainContent = document.getElementById('main-content');
+    const sidebarNav = document.getElementById('sidebar-nav');
+    function renderAll() { renderSidebar(); renderMainContent(); }
+    function renderSidebar() {
+        const ul = document.createElement('ul');
+        appData.categories.forEach(category => {
+            const a = document.createElement('a');
+            a.href = `#${category.id}`; a.textContent = category.title;
+            const li = document.createElement('li'); li.appendChild(a);
+            ul.appendChild(li);
+        });
+        sidebarNav.innerHTML = ''; sidebarNav.appendChild(ul);
+    }
+    function renderMainContent() {
+        mainContent.innerHTML = '';
+        appData.categories.forEach((category, catIndex) => {
+            const section = document.createElement('section');
+            section.id = category.id; section.className = 'content-section'; section.dataset.catIndex = catIndex;
+            
+            const cardsHTML = category.cards.map((card, cardIndex) => {
+                const isLongList = card.links.length > 8;
+                const listClass = isLongList ? 'link-list-columns' : 'link-list-default';
+                return `
+                <div class="card" data-card-index="${cardIndex}">
+                    <div class="card-header">
+                        <div class="drag-handle">⠿</div>
+                        <h3>${card.title}</h3>
+                        <div class="controls">
+                            <button class="control-btn up" title="上移" onclick="moveCard(${catIndex}, ${cardIndex}, -1)">🔼</button>
+                            <button class="control-btn down" title="下移" onclick="moveCard(${catIndex}, ${cardIndex}, 1)">🔽</button>
+                            <button class="control-btn edit" title="编辑标题" onclick="editCardTitle(${catIndex}, ${cardIndex})">✏️</button>
+                            <button class="control-btn delete" title="删除卡片" onclick="deleteCard(${catIndex}, ${cardIndex})">❌</button>
+                        </div>
+                    </div>
+                    <ul class="${listClass}">
+                        ${card.links.map((link, linkIndex) => `
+                            <li>
+                                <a href="${link.url}" target="_blank" title="${link.name}">${link.name}</a>
+                                <div class="custom-link-actions">
+                                    <button class="link-action-btn edit" title="编辑" onclick="editLink(${catIndex}, ${cardIndex}, ${linkIndex})">✏️</button>
+                                    <button class="link-action-btn delete" title="删除" onclick="deleteLink(${catIndex}, ${cardIndex}, ${linkIndex})">&times;</button>
+                                </div>
+                            </li>`).join('')}
+                    </ul>
+                    <div class="add-item-btn"><button onclick="addLink(${catIndex}, ${cardIndex})">+ 添加新链接</button></div>
+                </div>`;
+            }).join('');
+
+            section.innerHTML = `
+                <div class="section-header">
+                    <div class="drag-handle">⠿</div>
+                    <h2>${category.title}</h2>
+                    <div class="controls">
+                        <button class="control-btn up" title="上移" onclick="moveCategory(${catIndex}, -1)">🔼</button>
+                        <button class="control-btn down" title="下移" onclick="moveCategory(${catIndex}, 1)">🔽</button>
+                        <button class="control-btn edit" title="编辑标题" onclick="editCategoryTitle(${catIndex})">✏️</button>
+                        <button class="control-btn delete" title="删除分类" onclick="deleteCategory(${catIndex})">❌</button>
+                    </div>
+                </div>
+                <div class="card-grid">${cardsHTML}</div>
+                <div class="add-item-btn"><button onclick="addCard(${catIndex})">+ 添加新卡片</button></div>`;
+            mainContent.appendChild(section);
+        });
+        mainContent.innerHTML += `<div id="add-category-btn-container"><button id="add-category-btn" onclick="addCategory()">+ 添加新分类</button></div>`;
+    }
+    
+    const reRender = () => { saveData(); renderAll(); };
+    const moveItem = (arr, from, to) => { const item = arr.splice(from, 1)[0]; arr.splice(to, 0, item); };
+    window.addCategory = () => { const title = prompt("新分类标题:"); if(title) appData.categories.push({ id: `c_${Date.now()}`, title, cards: [] }); reRender(); };
+    window.deleteCategory = (i) => { if (confirm(`确认删除分类 "${appData.categories[i].title}"?`)) appData.categories.splice(i, 1); reRender(); };
+    window.editCategoryTitle = (i) => { const newTitle = prompt("新标题:", appData.categories[i].title); if(newTitle) appData.categories[i].title = newTitle; reRender(); };
+    window.moveCategory = (i, dir) => { const to = i + dir; if (to >= 0 && to < appData.categories.length) { moveItem(appData.categories, i, to); reRender(); } };
+    window.addCard = (catIdx) => { const title = prompt("新卡片标题:"); if(title) appData.categories[catIdx].cards.push({ id: `card_${Date.now()}`, title, links: [] }); reRender(); };
+    window.deleteCard = (catIdx, cardIdx) => { if (confirm(`确认删除卡片 "${appData.categories[catIdx].cards[cardIdx].title}"?`)) appData.categories[catIdx].cards.splice(cardIdx, 1); reRender(); };
+    window.editCardTitle = (catIdx, cardIdx) => { const newTitle = prompt("新标题:", appData.categories[catIdx].cards[cardIdx].title); if(newTitle) appData.categories[catIdx].cards[cardIdx].title = newTitle; reRender(); };
+    window.moveCard = (catIdx, cardIdx, dir) => { const cards = appData.categories[catIdx].cards; const to = cardIdx + dir; if(to >= 0 && to < cards.length) { moveItem(cards, cardIdx, to); reRender(); } };
+    window.addLink = (catIdx, cardIdx) => { const name = prompt("网站名称:"); if(!name) return; const url = prompt("网站地址:", "https://"); if(!url) return; appData.categories[catIdx].cards[cardIdx].links.push({ name, url }); reRender(); };
+    window.editLink = (catIdx, cardIdx, linkIdx) => { const l = appData.categories[catIdx].cards[cardIdx].links[linkIdx]; const name = prompt("新名称:", l.name); if(!name) return; const url = prompt("新地址:", l.url); if(!url) return; l.name = name; l.url = url; reRender(); };
+    window.deleteLink = (catIdx, cardIdx, linkIdx) => { if (confirm(`确认删除链接 "${appData.categories[catIdx].cards[cardIdx].links[linkIdx].name}"?`)) appData.categories[catIdx].cards[cardIdx].links.splice(linkIdx, 1); reRender(); };
+
+    const modal = document.getElementById('settings-modal');
+    document.getElementById('settings-btn').addEventListener('click', () => modal.style.display = 'flex');
+    document.getElementById('close-modal-btn').addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    
+    document.getElementById('reset-btn').addEventListener('click', () => {
+        if(confirm('警告：此操作将删除所有自定义内容，恢复到初始布局，确定要继续吗？')) {
+            localStorage.removeItem('navData'); loadData(); reRender();
+            alert('已恢复为默认布局。'); modal.style.display = 'none';
+        }
+    });
+
+    document.getElementById('export-btn').addEventListener('click', () => {
+        const dataStr = JSON.stringify(appData, null, 2);
+        const blob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `nav-config-${Date.now()}.json`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+    
+    const importConfigInput = document.getElementById('import-config-input');
+    importConfigInput.addEventListener('change', (event) => {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (importedData && Array.isArray(importedData.categories)) {
+                    if (confirm('这将覆盖您当前的全部布局和链接，确定要导入吗？')) {
+                        appData = importedData; reRender();
+                        alert('配置已成功导入！'); modal.style.display = 'none';
+                    }
+                } else { alert('文件格式无效，请选择正确的配置文件。'); }
+            } catch (error) { alert('解析文件失败，请确保文件是有效的JSON格式。'); }
+            finally { importConfigInput.value = ''; }
+        };
+        reader.readAsText(file);
+    });
+    
+    const importBookmarksInput = document.getElementById('import-bookmarks-input');
+    importBookmarksInput.addEventListener('change', (event) => {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const parser = new DOMParser(); const doc = parser.parseFromString(e.target.result, "text/html");
+            let importedCount = 0;
+            if (appData.categories.length === 0) appData.categories.push({ id: `c_${Date.now()}`, title: "导入的书签", cards: [] });
+            const targetCategory = appData.categories[0];
+            const allUrlsInCategory = new Set(targetCategory.cards.flatMap(c => c.links.map(l => l.url)));
+            const dts = doc.body.querySelectorAll('dl > dt'); let looseLinks = [];
+            dts.forEach(dt => {
+                const h3 = dt.querySelector('h3'); const a = dt.querySelector('a');
+                if (h3) {
+                    const folderName = h3.textContent.trim(); const newCard = { id: `card_${Date.now()}`, title: folderName, links: [] };
+                    const linkDl = dt.nextElementSibling;
+                    if(linkDl && linkDl.tagName === 'DL') {
+                        linkDl.querySelectorAll('a').forEach(linkNode => {
+                            const name = linkNode.textContent.trim(); const url = linkNode.href;
+                            if (name && url && !url.startsWith('javascript:') && !allUrlsInCategory.has(url)) {
+                                newCard.links.push({ name, url }); allUrlsInCategory.add(url); importedCount++;
+                            }
+                        });
+                    }
+                    if(newCard.links.length > 0) targetCategory.cards.push(newCard);
+                } else if (a) {
+                    const name = a.textContent.trim(); const url = a.href;
+                    if (name && url && !url.startsWith('javascript:') && !allUrlsInCategory.has(url)) {
+                        looseLinks.push({ name, url }); allUrlsInCategory.add(url); importedCount++;
+                    }
+                }
+            });
+            if (looseLinks.length > 0) {
+                let uncatCard = targetCategory.cards.find(c => c.title === "未分类书签");
+                if(!uncatCard) { uncatCard = { id: `card_uncat_${Date.now()}`, title: "未分类书签", links: [] }; targetCategory.cards.push(uncatCard); }
+                uncatCard.links.push(...looseLinks);
+            }
+            if (importedCount > 0) { reRender(); alert(`成功导入 ${importedCount} 个新书签到 "${targetCategory.title}" 分类!`); } 
+            else { alert('没有找到新书签或所有书签已存在。'); }
+            modal.style.display = 'none'; importBookmarksInput.value = '';
+        };
+        reader.readAsText(file);
+    });
+
+    const dragModeBtn = document.getElementById('drag-mode-btn');
+    let sortableInstances = []; let isDragMode = false;
+    dragModeBtn.addEventListener('click', () => {
+        isDragMode = !isDragMode;
+        document.body.classList.toggle('drag-mode', isDragMode);
+        dragModeBtn.classList.toggle('active', isDragMode);
+        if (isDragMode) { initDragAndDrop(); } else { destroyDragAndDrop(); }
+    });
+
+    function initDragAndDrop() {
+        destroyDragAndDrop(); // Clear existing instances before creating new ones
+        sortableInstances.push(new Sortable(mainContent, {
+            animation: 150, handle: '.drag-handle', filter: '#add-category-btn-container',
+            onEnd: (evt) => { moveItem(appData.categories, evt.oldIndex, evt.newIndex); reRender(); if(isDragMode) initDragAndDrop(); }
+        }));
+        document.querySelectorAll('.card-grid').forEach(grid => {
+            const catIndex = grid.closest('.content-section').dataset.catIndex;
+            sortableInstances.push(new Sortable(grid, {
+                group: 'cards', animation: 150, handle: '.drag-handle',
+                onEnd: (evt) => { moveItem(appData.categories[catIndex].cards, evt.oldIndex, evt.newIndex); reRender(); if(isDragMode) initDragAndDrop(); }
+            }));
+        });
+    }
+    function destroyDragAndDrop() { sortableInstances.forEach(s => s.destroy()); sortableInstances = []; }
+
+    loadData();
+    renderAll();
+});
+</script>
+
+</body>
+</html>
