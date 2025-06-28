@@ -50,27 +50,26 @@
         .card li a { display: block; background-color: var(--bg-color); padding: 6px 12px; border-radius: 15px; font-size: 0.9em; color: var(--text-secondary-color); transition: background-color 0.2s ease, color 0.2s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .card li a:hover { background-color: var(--primary-color); color: #fff; }
 
-        /* --- 编辑控件 --- */
-        .controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0;}
+        /* --- [MODIFIED] 编辑控件默认隐藏 --- */
+        .controls, .drag-handle, .add-item-btn, #add-category-btn-container, .custom-link-actions { display: none; }
+
+        /* --- [MODIFIED] 编辑模式下显示控件 --- */
+        body.edit-mode .controls { display: flex; }
+        body.edit-mode .drag-handle { display: block; cursor: move; color: var(--text-secondary-color); font-size: 20px; }
+        body.edit-mode .add-item-btn { display: block; }
+        body.edit-mode #add-category-btn-container { display: block; }
+        body.edit-mode .card li:hover .custom-link-actions { display: flex; }
+
+        /* --- [MODIFIED] 编辑模式视觉样式 --- */
+        body.edit-mode .content-section { border: 2px dashed var(--primary-color); }
+        .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
+        #edit-mode-btn.active { background-color: var(--primary-color); color: white; }
+        
+        .controls { align-items: center; gap: 8px; flex-shrink: 0;}
         .control-btn { font-size: 16px; color: var(--text-secondary-color); transition: color 0.2s; line-height: 1; padding: 4px; border-radius: 4px; }
         .control-btn:hover { background-color: var(--bg-color); }
-        .custom-link-actions { display: none; position: absolute; top: 50%; right: 5px; transform: translateY(-50%); gap: 4px; background: rgba(255,255,255,0.8); padding: 2px 5px; border-radius: 10px;}
-        .card li:hover .custom-link-actions { display: flex; }
+        .custom-link-actions { position: absolute; top: 50%; right: 5px; transform: translateY(-50%); gap: 4px; background: rgba(255,255,255,0.8); padding: 2px 5px; border-radius: 10px;}
         .link-action-btn { width: 20px; height: 20px; border-radius: 50%; background-color: rgba(0,0,0,0.6); color: white; font-size: 12px; display: flex; align-items: center; justify-content: center; line-height: 1; border: 1px solid white; }
-        .add-item-btn { margin-top: auto; padding-top: 15px; }
-        .add-item-btn button { width: 100%; padding: 8px; border: 1px dashed var(--border-color); border-radius: 6px; color: var(--text-secondary-color); transition: all 0.2s; }
-        .add-item-btn button:hover { border-color: var(--primary-color); background-color: var(--bg-color); color: var(--primary-color); }
-        #add-category-btn-container { text-align: center; margin-top: 40px; }
-        #add-category-btn { background-color: var(--success-color); color: white; padding: 10px 20px; border-radius: 5px; font-size: 1em; }
-        
-        /* --- 拖拽模式 --- */
-        .drag-handle { display: none; cursor: move; color: var(--text-secondary-color); font-size: 20px; }
-        body.drag-mode .drag-handle { display: block; }
-        body.drag-mode .content-section { border: 2px dashed var(--primary-color); }
-        body.drag-mode .controls { display: none; }
-        .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
-        .sortable-chosen { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        #drag-mode-btn.active { background-color: var(--primary-color); color: white; }
         
         /* --- 设置弹窗 --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
@@ -81,7 +80,7 @@
         .setting-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);}
         .setting-section:last-child { border-bottom: none; margin-bottom: 0; }
         .setting-section h4 { margin-bottom: 10px; font-size: 1.1em; }
-        .modal-btn { display: inline-block; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; color: white; margin-right: 10px; }
+        .modal-btn { display: inline-block; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; color: white; margin-right: 10px; margin-bottom: 5px;}
         #export-btn { background-color: var(--success-color); }
         #import-config-label { background-color: var(--primary-color); }
         #reset-btn { background-color: var(--danger-color); }
@@ -112,8 +111,8 @@
             <div class="sidebar-title">导航站</div>
             <nav id="sidebar-nav"></nav>
             <div class="sidebar-actions">
-                <button id="drag-mode-btn" class="sidebar-btn" title="拖拽排序">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512" fill="currentColor"><path d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0C17.9 160 0 142.1 0 120L0 72C0 49.9 17.9 32 40 32zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/></svg>
+                <button id="edit-mode-btn" class="sidebar-btn" title="页面编辑">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" fill="currentColor"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 252.7l22.6-22.6zM120 352.9l-33.9 9.9 9.9-33.9 194.3-194.3 24 24-194.3 194.3zM352 152.9l24 24 24-24-24-24-24 24z"/></svg>
                 </button>
                 <button id="settings-btn" class="sidebar-btn" title="设置">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9.9 15.9-19.4 15.9H181.8c-9.5 0-17.4-6.8-19.4-15.9l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L49.8 409.4c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C50.6 273.1 50 264.6 50 256s.6-17.1 1.7-25.4L7.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9.9-15.9 19.4-15.9h148.4c9.5 0 17.4 6.8 19.4 15.9l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg>
@@ -126,9 +125,9 @@
 
     <div id="settings-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header"><h3>导航设置</h3><button class="close-btn" id="close-modal-btn">&times;</button></div>
+            <div class="modal-header"><h3>导航设置</h3><button class="close-btn" id="close-modal-btn">×</button></div>
             <div id="modal-body">
-                <div class="setting-section">
+                 <div class="setting-section">
                     <h4>数据管理</h4>
                     <p class="setting-note">导出配置可备份您的所有布局和链接。导入配置会覆盖当前所有内容。</p>
                     <button id="export-btn" class="modal-btn">导出配置</button>
@@ -195,13 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `
                 <div class="card" data-card-index="${cardIndex}">
                     <div class="card-header">
-                        <div class="drag-handle">⠿</div>
-                        <h3>${card.title}</h3>
+                        <div class="drag-handle">⠿</div><h3>${card.title}</h3>
                         <div class="controls">
-                            <button class="control-btn up" title="上移" onclick="moveCard(${catIndex}, ${cardIndex}, -1)">🔼</button>
-                            <button class="control-btn down" title="下移" onclick="moveCard(${catIndex}, ${cardIndex}, 1)">🔽</button>
-                            <button class="control-btn edit" title="编辑标题" onclick="editCardTitle(${catIndex}, ${cardIndex})">✏️</button>
-                            <button class="control-btn delete" title="删除卡片" onclick="deleteCard(${catIndex}, ${cardIndex})">❌</button>
+                            <button class="control-btn" title="上移" onclick="moveCard(${catIndex}, ${cardIndex}, -1)">🔼</button>
+                            <button class="control-btn" title="下移" onclick="moveCard(${catIndex}, ${cardIndex}, 1)">🔽</button>
+                            <button class="control-btn" title="编辑标题" onclick="editCardTitle(${catIndex}, ${cardIndex})">✏️</button>
+                            <button class="control-btn" title="删除卡片" onclick="deleteCard(${catIndex}, ${cardIndex})">❌</button>
                         </div>
                     </div>
                     <ul class="${listClass}">
@@ -209,8 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <li>
                                 <a href="${link.url}" target="_blank" title="${link.name}">${link.name}</a>
                                 <div class="custom-link-actions">
-                                    <button class="link-action-btn edit" title="编辑" onclick="editLink(${catIndex}, ${cardIndex}, ${linkIndex})">✏️</button>
-                                    <button class="link-action-btn delete" title="删除" onclick="deleteLink(${catIndex}, ${cardIndex}, ${linkIndex})">&times;</button>
+                                    <button class="link-action-btn" title="编辑" onclick="editLink(${catIndex}, ${cardIndex}, ${linkIndex})">✏️</button>
+                                    <button class="link-action-btn" title="删除" onclick="deleteLink(${catIndex}, ${cardIndex}, ${linkIndex})">×</button>
                                 </div>
                             </li>`).join('')}
                     </ul>
@@ -220,13 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             section.innerHTML = `
                 <div class="section-header">
-                    <div class="drag-handle">⠿</div>
-                    <h2>${category.title}</h2>
+                    <div class="drag-handle">⠿</div><h2>${category.title}</h2>
                     <div class="controls">
-                        <button class="control-btn up" title="上移" onclick="moveCategory(${catIndex}, -1)">🔼</button>
-                        <button class="control-btn down" title="下移" onclick="moveCategory(${catIndex}, 1)">🔽</button>
-                        <button class="control-btn edit" title="编辑标题" onclick="editCategoryTitle(${catIndex})">✏️</button>
-                        <button class="control-btn delete" title="删除分类" onclick="deleteCategory(${catIndex})">❌</button>
+                        <button class="control-btn" title="上移" onclick="moveCategory(${catIndex}, -1)">🔼</button>
+                        <button class="control-btn" title="下移" onclick="moveCategory(${catIndex}, 1)">🔽</button>
+                        <button class="control-btn" title="编辑标题" onclick="editCategoryTitle(${catIndex})">✏️</button>
+                        <button class="control-btn" title="删除分类" onclick="deleteCategory(${catIndex})">❌</button>
                     </div>
                 </div>
                 <div class="card-grid">${cardsHTML}</div>
@@ -267,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const blob = new Blob([dataStr], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `nav-config-${Date.now()}.json`;
+        a.href = url; a.download = `nav-config-${new Date().toISOString().slice(0,10)}.json`;
         document.body.appendChild(a); a.click();
         document.body.removeChild(a); URL.revokeObjectURL(url);
     });
@@ -284,8 +281,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         appData = importedData; reRender();
                         alert('配置已成功导入！'); modal.style.display = 'none';
                     }
-                } else { alert('文件格式无效，请选择正确的配置文件。'); }
-            } catch (error) { alert('解析文件失败，请确保文件是有效的JSON格式。'); }
+                } else { alert('文件格式无效。'); }
+            } catch (error) { alert('解析文件失败。'); }
             finally { importConfigInput.value = ''; }
         };
         reader.readAsText(file);
@@ -335,26 +332,26 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsText(file);
     });
 
-    const dragModeBtn = document.getElementById('drag-mode-btn');
-    let sortableInstances = []; let isDragMode = false;
-    dragModeBtn.addEventListener('click', () => {
-        isDragMode = !isDragMode;
-        document.body.classList.toggle('drag-mode', isDragMode);
-        dragModeBtn.classList.toggle('active', isDragMode);
-        if (isDragMode) { initDragAndDrop(); } else { destroyDragAndDrop(); }
+    const editModeBtn = document.getElementById('edit-mode-btn');
+    let sortableInstances = []; let isEditMode = false;
+    editModeBtn.addEventListener('click', () => {
+        isEditMode = !isEditMode;
+        document.body.classList.toggle('edit-mode', isEditMode);
+        editModeBtn.classList.toggle('active', isEditMode);
+        if (isEditMode) { initDragAndDrop(); } else { destroyDragAndDrop(); }
     });
 
     function initDragAndDrop() {
-        destroyDragAndDrop(); // Clear existing instances before creating new ones
+        destroyDragAndDrop();
         sortableInstances.push(new Sortable(mainContent, {
             animation: 150, handle: '.drag-handle', filter: '#add-category-btn-container',
-            onEnd: (evt) => { moveItem(appData.categories, evt.oldIndex, evt.newIndex); reRender(); if(isDragMode) initDragAndDrop(); }
+            onEnd: (evt) => { moveItem(appData.categories, evt.oldIndex, evt.newIndex); reRender(); if(isEditMode) initDragAndDrop(); }
         }));
         document.querySelectorAll('.card-grid').forEach(grid => {
             const catIndex = grid.closest('.content-section').dataset.catIndex;
             sortableInstances.push(new Sortable(grid, {
                 group: 'cards', animation: 150, handle: '.drag-handle',
-                onEnd: (evt) => { moveItem(appData.categories[catIndex].cards, evt.oldIndex, evt.newIndex); reRender(); if(isDragMode) initDragAndDrop(); }
+                onEnd: (evt) => { moveItem(appData.categories[catIndex].cards, evt.oldIndex, evt.newIndex); reRender(); if(isEditMode) initDragAndDrop(); }
             }));
         });
     }
